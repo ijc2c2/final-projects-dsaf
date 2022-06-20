@@ -1,0 +1,100 @@
+---
+title: "NYPD Shooting Data Incident Report"
+author: "Isaac Carey"
+date: '2022-06-20'
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, tidy.opts = list(width.cutoff = 60), tidy = TRUE)
+library(lubridate)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(formatR)
+```
+
+## Overview
+
+- Obtain and Preprocess Data
+- Examine Missing/Erroneous Data
+- Prepare Visualizations & Discuss Bias
+- Conclusions and Next Steps
+
+## Missing Values
+
+```{r preprocess, echo = FALSE}
+
+data <- read.csv("https://data.cityofnewyork.us/api/views/833y-fsy8/rows.csv?accessType=DOWNLOAD", na.string = "")
+data <- data %>% mutate(Date_Of_Incident = mdy_hms(paste(OCCUR_DATE, OCCUR_TIME, sep = " ")))
+data <- data %>% mutate(Hour_Of_Incident = hour(Date_Of_Incident))       
+na_counts <- data %>% select(everything()) %>% summarise_all(funs(sum(is.na(.))))
+```
+Missing values seem reasonable in this context.
+```{r NAs, echo = FALSE}
+colSums(na_counts)
+```
+
+## Erroneous Values
+
+```{r typos, echo = FALSE}
+table(data$PERP_AGE_GROUP)
+```
+- Impute? Remove? 
+
+- Any introduction of bias?
+
+## First Consideration: Time of Incident
+
+- Frequency chart by hour will give an easy snapshot of the times of incidents.
+
+- Likely a predictable result, but can inform/reinforce scheduling of officers.
+
+## Visualization of Incident Times
+
+```{r incidentgraph, echo = FALSE}
+ggplot(data, aes(x= Hour_Of_Incident)) + geom_bar() + labs(x = "Hour of Incident", y = "Frequency")
+```
+
+
+## Second Consideration: Age of Perpetrators
+
+- Erroneous values removed with no major bias concerns.
+
+- High values of a particular age group can lead to more targeted outreach.
+
+- Unknown vs NA
+
+## Graph of Age Distribution of Perpetrators
+
+```{r agegraph, echo = FALSE}
+filtered_ages <- data %>% filter(PERP_AGE_GROUP %in% c("<18", "18-24", "25-44", "45-64", "65+", "UNKNOWN"))
+ggplot(filtered_ages, aes(x= factor(PERP_AGE_GROUP))) + geom_bar() + labs(x = "Perp Age Group", y = "Frequency")
+```
+
+- Potential bias issue.
+
+## Third Consideration: Breakdown of Incidents by Borough
+
+- This can also help the city to better allocate its resources.
+
+- Is this a biased view?
+
+
+## Table of Incidents by Borough
+
+```{r boroughgraph, echo = FALSE}
+ggplot(data, aes(x = BORO)) + geom_bar() + labs(x = "Borough", y = "Frequency")
+```
+
+## Conclusions and Next Steps
+
+- Potentially consider relative incident rates by borough instead of total amounts.
+
+- Consider victim/perpetrator age difference.
+
+- Pilot different schedules of duty for officers to address nighttime incidents.
+
+## Thanks!
+
+Thank you so much for taking the time to go through this.
